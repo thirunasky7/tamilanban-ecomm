@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Mobile;
 
 use App\Models\Order;
+use App\Services\RazorpayService;
 use App\Support\MobileUrl;
 
 class OrderTransformer
@@ -18,10 +19,12 @@ class OrderTransformer
         };
     }
 
-    public static function order(Order $order): array
+    public static function order(Order $order, ?RazorpayService $razorpay = null): array
     {
         $order->loadMissing(['items.product', 'timelines']);
         $address = $order->shipping_address ?? [];
+        $razorpay ??= app(RazorpayService::class);
+        $payment = $razorpay->mobileCheckoutPayload($order);
 
         return [
             'id' => $order->order_number,
@@ -31,6 +34,13 @@ class OrderTransformer
                 ? optional($order->updated_at)?->toIso8601String()
                 : null,
             'paymentMethod' => (string) $order->payment_method,
+            'paymentStatus' => (string) $order->payment_status,
+            'needsPayment' => (bool) $payment['needsPayment'],
+            'razorpayOrderId' => $payment['razorpayOrderId'],
+            'razorpayKeyId' => $payment['razorpayKeyId'],
+            'amountPaise' => $payment['amountPaise'],
+            'currency' => $payment['currency'],
+            'checkoutConfig' => $payment['checkoutConfig'],
             'address' => [
                 'id' => 'addr-'.$order->id,
                 'label' => 'Delivery',

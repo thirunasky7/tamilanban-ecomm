@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\OrderTimeline;
 use App\Services\CartService;
 use App\Services\ProductVariantService;
 use App\Services\RazorpayService;
@@ -28,7 +27,7 @@ class PaymentController extends Controller
             ->where('payment_status', 'pending')
             ->firstOrFail();
 
-        if (! in_array($order->payment_method, ['upi', 'netbanking', 'card'], true)) {
+        if (! $this->razorpay->isOnlineMethod((string) $order->payment_method)) {
             return redirect()->route('orders.show', $order->order_number);
         }
 
@@ -64,6 +63,11 @@ class PaymentController extends Controller
             ->where('payment_status', 'pending')
             ->firstOrFail();
 
+        if ($order->razorpay_order_id !== $data['razorpay_order_id']) {
+            return redirect()->route('checkout.pay', $order->order_number)
+                ->with('error', 'Payment verification failed. Please try again.');
+        }
+
         if (! $this->razorpay->verifyPayment(
             $data['razorpay_order_id'],
             $data['razorpay_payment_id'],
@@ -73,20 +77,8 @@ class PaymentController extends Controller
                 ->with('error', 'Payment verification failed. Please try again.');
         }
 
-        $order->update([
-            'payment_status' => 'paid',
-            'razorpay_payment_id' => $data['razorpay_payment_id'],
-            'status' => 'confirmed',
-        ]);
-
-        OrderTimeline::query()->create([
-            'order_id' => $order->id,
-            'status' => 'confirmed',
-            'title' => 'Payment received',
-            'note' => 'Payment completed via Razorpay.',
-        ]);
-
-        $this->variants->decrementOrderStock($order);
+        $this->razorpay->markOrderPaid($order, $data['razorpay_payment_id']);
+        $this->variants->decrementOrderStock($order->fresh());
         $this->cart->clear();
 
         return redirect()->route('orders.show', $order->order_number)

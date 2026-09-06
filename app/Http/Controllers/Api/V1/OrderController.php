@@ -31,7 +31,7 @@ class OrderController extends Controller
             ->with(['items.product', 'timelines'])
             ->latest()
             ->get()
-            ->map(fn (Order $order) => OrderTransformer::order($order))
+            ->map(fn (Order $order) => OrderTransformer::order($order, $this->razorpay))
             ->values();
 
         return response()->json(['orders' => $orders]);
@@ -45,7 +45,7 @@ class OrderController extends Controller
             ->with(['items.product', 'timelines'])
             ->firstOrFail();
 
-        return response()->json(OrderTransformer::order($order));
+        return response()->json(OrderTransformer::order($order, $this->razorpay));
     }
 
     public function paymentMethods(): JsonResponse
@@ -72,12 +72,22 @@ class OrderController extends Controller
             ];
         }
 
+        if ($this->razorpay->isMethodEnabled('netbanking')) {
+            $methods[] = [
+                'id' => 'netbanking',
+                'type' => 'netbanking',
+                'title' => 'Net Banking',
+                'subtitle' => 'Pay via Net Banking (Razorpay)',
+                'iconName' => 'account_balance',
+            ];
+        }
+
         if ($this->razorpay->isMethodEnabled('card')) {
             $methods[] = [
                 'id' => 'card',
                 'type' => 'card',
                 'title' => 'Card',
-                'subtitle' => 'Debit / Credit Card',
+                'subtitle' => 'Debit / Credit Card (Razorpay)',
                 'iconName' => 'credit_card',
             ];
         }
@@ -97,6 +107,11 @@ class OrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $allowedMethods = $this->razorpay->availableCheckoutMethods();
+        if ($allowedMethods === []) {
+            $allowedMethods = ['cod'];
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'mobile' => ['required', 'string', 'max:20'],
@@ -106,7 +121,7 @@ class OrderController extends Controller
             'city' => ['required', 'string', 'max:100'],
             'state' => ['required', 'string', 'max:100'],
             'pincode' => ['required', 'string', 'max:20'],
-            'payment_method' => ['required', 'string'],
+            'payment_method' => ['required', 'string', 'in:'.implode(',', $allowedMethods)],
             'notes' => ['nullable', 'string', 'max:500'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required'],
@@ -229,6 +244,6 @@ class OrderController extends Controller
 
         $order->load(['items.product', 'timelines']);
 
-        return response()->json(OrderTransformer::order($order), 201);
+        return response()->json(OrderTransformer::order($order, $this->razorpay), 201);
     }
 }

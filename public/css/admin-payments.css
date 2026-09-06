@@ -42,29 +42,34 @@
 }
 
 .adm-payments-method {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 12px;
+  gap: 10px;
+  padding: 18px 14px 16px;
   border: 2px solid #e2e8f0;
   border-radius: 14px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
   text-align: center;
   background: #fff;
+  user-select: none;
 }
 
-.adm-payments-method input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+.adm-payments-method:hover {
+  border-color: #cbd5e1;
 }
 
-.adm-payments-method:has(input:checked) {
+.adm-payments-method:has(.adm-toggle:checked) {
   border-color: var(--adm-pri);
   background: var(--adm-pri-light);
   box-shadow: 0 0 0 3px rgba(var(--adm-pri-rgb), 0.08);
+}
+
+/* Label click toggles the switch; avoid nested click quirks */
+.adm-payments-method .adm-toggle {
+  pointer-events: none;
 }
 
 .adm-payments-method__icon {
