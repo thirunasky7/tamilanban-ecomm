@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Resources\Mobile;
 
@@ -169,7 +169,10 @@ class CatalogTransformer
             'productId' => $product ? (string) $product->id : '',
             'productName' => $product?->name ?? '',
             'productPrice' => $product ? (float) $product->price : 0,
-            'likes' => 0,
+            'likes' => (int) ($short->likes_count ?? 0),
+            'liked' => auth('sanctum')->check()
+                ? $short->isLikedBy((int) auth('sanctum')->id())
+                : false,
         ];
     }
 }

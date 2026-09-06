@@ -34,8 +34,13 @@ class OtpLoginController extends Controller
             'otp.name' => $data['name'] ?? null,
         ]);
 
+        $message = $result['message'];
+        if (! empty($result['dummy_otp'])) {
+            $message .= ' Demo OTP: '.$result['dummy_otp'];
+        }
+
         return redirect()->route('login.verify')
-            ->with('success', $result['message']);
+            ->with('success', $message);
     }
 
     public function showVerify(): View|RedirectResponse

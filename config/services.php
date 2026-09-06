@@ -36,4 +36,12 @@ return [
         'key_secret' => env('RAZORPAY_KEY_SECRET'),
     ],
 
+    'sms' => [
+        'enabled' => env('SMS_ENABLED', false),
+        'base_url' => env('SMS_BASE_URL', 'https://sms.zennexs.com/api/v1'),
+        'api_key' => env('SMS_API_KEY'),
+        'api_secret' => env('SMS_API_SECRET'),
+        'country_code' => env('SMS_DEFAULT_COUNTRY_CODE', '91'),
+    ],
+
 ];

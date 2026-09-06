@@ -1,13 +1,15 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderTimeline;
+use App\Services\Sms\OrderSmsNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Throwable;
 
 class OrderController extends Controller
 {
@@ -45,7 +47,12 @@ class OrderController extends Controller
             'note' => $data['note'] ?? null,
         ]);
 
+        try {
+            app(OrderSmsNotifier::class)->statusUpdated($order->fresh(['user']));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
         return back()->with('success', 'Order status updated.');
     }
 }
-

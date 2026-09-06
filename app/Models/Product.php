@@ -92,6 +92,11 @@ class Product extends Model
         return $this->hasMany(Referral::class);
     }
 
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(ProductFavorite::class);
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(ProductReview::class);

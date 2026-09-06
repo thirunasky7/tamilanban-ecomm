@@ -231,6 +231,12 @@ class OrderController extends Controller
                 'status' => 'confirmed',
                 'payment_status' => 'cod',
             ]);
+
+            try {
+                app(\App\Services\Sms\OrderSmsNotifier::class)->orderConfirmed($order->fresh(['user']));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
         } else {
             try {
                 $this->razorpay->createOrder($order);

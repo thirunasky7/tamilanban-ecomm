@@ -4,12 +4,19 @@ namespace App\Services\Auth;
 
 use App\Models\OtpCode;
 use App\Models\User;
+use App\Services\Sms\SmsGatewayService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class CustomerOtpService
 {
     public const DUMMY_OTP = '123456';
+
+    public function __construct(private SmsGatewayService $sms)
+    {
+    }
 
     public function sendOtp(string $mobile): array
     {
@@ -17,18 +24,49 @@ class CustomerOtpService
 
         OtpCode::query()->where('mobile', $mobile)->delete();
 
+        $useDummy = $this->sms->useDummyOtp() || ! $this->sms->enabled();
+        $code = $useDummy ? self::DUMMY_OTP : (string) random_int(100000, 999999);
+
         $otp = OtpCode::query()->create([
             'mobile' => $mobile,
-            'code' => self::DUMMY_OTP,
+            'code' => $code,
             'expires_at' => Carbon::now()->addMinutes(10),
         ]);
 
-        return [
+        $smsSent = false;
+        try {
+            if ($this->sms->enabled()) {
+                $template = $this->sms->template(
+                    'otp',
+                    'Your ShopEase OTP is {otp}. Valid for 10 minutes.'
+                );
+                $body = $this->sms->render($template, ['otp' => $code]);
+                $smsSent = $this->sms->send($mobile, $body);
+            }
+        } catch (Throwable $exception) {
+            Log::error('OTP SMS failed without blocking login.', [
+                'mobile' => $mobile,
+                'error' => $exception->getMessage(),
+            ]);
+            $smsSent = false;
+        }
+
+        $payload = [
             'mobile' => $mobile,
             'expires_at' => $otp->expires_at,
-            'message' => 'OTP sent. Use 123456 for now (dummy OTP).',
-            'dummy_otp' => self::DUMMY_OTP,
+            'message' => $smsSent
+                ? 'OTP sent to your mobile number.'
+                : ($useDummy
+                    ? 'OTP ready. Use 123456 (dummy OTP / SMS not enabled).'
+                    : 'OTP generated. If you did not receive SMS, try again shortly.'),
+            'sms_sent' => $smsSent,
         ];
+
+        if ($useDummy) {
+            $payload['dummy_otp'] = self::DUMMY_OTP;
+        }
+
+        return $payload;
     }
 
     public function verifyAndLogin(string $mobile, string $code, ?string $name = null): User

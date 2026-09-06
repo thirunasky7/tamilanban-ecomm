@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\EngagementController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -32,5 +33,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders/{orderNumber}', [OrderController::class, 'show']);
         Route::post('/orders', [OrderController::class, 'store']);
         Route::post('/payments/verify', [PaymentController::class, 'verify']);
+
+        Route::get('/favorites', [EngagementController::class, 'favorites']);
+        Route::get('/favorites/ids', [EngagementController::class, 'favoriteIds']);
+        Route::post('/favorites/{productId}/toggle', [EngagementController::class, 'toggleFavorite']);
+        Route::post('/shorts/{shortId}/like', [EngagementController::class, 'toggleShortLike']);
     });
 });

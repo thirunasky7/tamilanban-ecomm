@@ -12,7 +12,7 @@
 <a class="msh-nav-item {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">
 <svg viewBox="0 0 24 24" fill="none"><path d="M6 4h12v16H6z" stroke="currentColor" stroke-width="1.5"/><path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
 {{ __('store.orders') }}</a>
-<a class="msh-nav-item {{ request()->routeIs('login*') ? 'active' : '' }}" href="{{ auth()->check() ? route('orders.index') : route('login') }}">
+<a class="msh-nav-item {{ request()->routeIs('login*') ? 'active' : '' }}" href="{{ auth()->check() ? route('favorites.index') : route('login') }}">
 <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.5"/></svg>
 {{ __('store.profile') }}</a>
 </nav>

@@ -16,11 +16,13 @@ use App\Http\Controllers\Store\CartController;
 use App\Http\Controllers\Store\CheckoutController;
 use App\Http\Controllers\Store\HomeController;
 use App\Http\Controllers\Admin\PaymentGatewayController as AdminPaymentGatewayController;
+use App\Http\Controllers\Admin\SmsSettingsController as AdminSmsSettingsController;
 use App\Http\Controllers\Store\OrderController;
 use App\Http\Controllers\Store\PageController;
 use App\Http\Controllers\Store\PaymentController;
 use App\Http\Controllers\Store\ProductController;
 use App\Http\Controllers\Store\ReviewController;
+use App\Http\Controllers\Store\FavoriteController;
 use App\Http\Controllers\Store\ShortController as StoreShortController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +64,11 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [OtpLoginController::class, 'logout'])->middleware('auth')->name('logout');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+    Route::post('/favorites/{product}/toggle', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
+});
+
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest:admin')->group(function () {
         Route::get('/login', [AdminLoginController::class, 'show'])->name('login');
@@ -90,6 +97,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('super_admin')->group(function () {
             Route::get('payments', [AdminPaymentGatewayController::class, 'index'])->name('payments.index');
             Route::put('payments', [AdminPaymentGatewayController::class, 'update'])->name('payments.update');
+            Route::get('sms', [AdminSmsSettingsController::class, 'index'])->name('sms.index');
+            Route::put('sms', [AdminSmsSettingsController::class, 'update'])->name('sms.update');
+            Route::post('sms/test', [AdminSmsSettingsController::class, 'test'])->name('sms.test');
             Route::get('languages', [AdminLanguageController::class, 'index'])->name('languages.index');
             Route::put('languages', [AdminLanguageController::class, 'update'])->name('languages.update');
         });

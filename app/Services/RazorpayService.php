@@ -162,6 +162,12 @@ class RazorpayService
             'title' => 'Payment received',
             'note' => 'Payment completed via Razorpay.',
         ]);
+
+        try {
+            app(\App\Services\Sms\OrderSmsNotifier::class)->paymentReceived($order->fresh());
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
     }
 
     public function testCredentials(string $keyId, string $keySecret): bool

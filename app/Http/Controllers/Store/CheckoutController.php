@@ -139,7 +139,17 @@ class CheckoutController extends Controller
 
         if ($data['payment_method'] === 'cod') {
             $this->variants->decrementOrderStock($order);
+            $order->update([
+                'status' => 'confirmed',
+                'payment_status' => 'cod',
+            ]);
             $this->cart->clear();
+
+            try {
+                app(\App\Services\Sms\OrderSmsNotifier::class)->orderConfirmed($order->fresh(['user']));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
 
             return redirect()->route('orders.show', $order->order_number)
                 ->with('success', 'Order placed successfully.');

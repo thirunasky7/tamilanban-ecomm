@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\OtpCode;
+use App\Models\User;
 use App\Services\Auth\CustomerOtpService;
 use App\Support\Media;
 use App\Support\MobileUrl;
@@ -26,11 +28,17 @@ class AuthController extends Controller
 
         $result = $this->otp->sendOtp($data['mobile']);
 
-        return response()->json([
+        $payload = [
             'message' => $result['message'],
             'mobile' => $result['mobile'],
-            'dummy_otp' => $result['dummy_otp'] ?? null,
-        ]);
+            'sms_sent' => (bool) ($result['sms_sent'] ?? false),
+        ];
+
+        if (! empty($result['dummy_otp'])) {
+            $payload['dummy_otp'] = $result['dummy_otp'];
+        }
+
+        return response()->json($payload);
     }
 
     public function verifyOtp(Request $request): JsonResponse
@@ -41,107 +49,126 @@ class AuthController extends Controller
             'name' => ['nullable', 'string', 'max:120'],
         ]);
 
-        try {
-            $user = $this->otp->verifyAndLogin(
-                $data['mobile'],
-                $data['otp'],
-                $data['name'] ?? null,
-            );
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        $mobile = $this->otp->normalizeMobile($data['mobile']);
+
+        $otp = OtpCode::query()
+            ->where('mobile', $mobile)
+            ->latest()
+            ->first();
+
+        if (! $otp || ! $otp->isValid($data['otp'])) {
             throw ValidationException::withMessages([
-                'otp' => [$e->getMessage()],
+                'otp' => ['Invalid or expired OTP.'],
             ]);
+        }
+
+        $otp->update(['verified_at' => now()]);
+
+        $user = User::query()->firstOrCreate(
+            ['mobile' => $mobile],
+            [
+                'name' => $data['name'] ?: 'Customer '.substr($mobile, -4),
+                'type' => 'customer',
+                'is_active' => true,
+                'mobile_verified_at' => now(),
+            ]
+        );
+
+        if (! $user->mobile_verified_at) {
+            $user->update(['mobile_verified_at' => now()]);
+        }
+
+        if (! empty($data['name']) && blank($user->name)) {
+            $user->update(['name' => $data['name']]);
         }
 
         $token = $user->createToken('mobile')->plainTextToken;
 
-        return response()->json([
-            'id' => (string) $user->id,
-            'email' => (string) ($user->email ?? ''),
-            'fullName' => (string) $user->name,
-            'phone' => (string) ($user->mobile ?? ''),
-            'avatarUrl' => MobileUrl::absolute(Media::url($user->avatar)),
-            'token' => $token,
-        ]);
+        return response()->json($this->tokenPayload($user, $token));
     }
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json(['user' => $this->userPayload($request->user())]);
+        return response()->json([
+            'user' => $this->userPayload($request->user()),
+        ]);
     }
 
     public function updateProfile(Request $request): JsonResponse
     {
-        $user = $request->user();
         $data = $request->validate([
-            'fullName' => ['sometimes', 'string', 'max:120'],
+            'fullName' => ['required', 'string', 'max:120'],
             'email' => ['nullable', 'email', 'max:120'],
-            'phone' => ['nullable', 'string', 'max:15'],
+            'phone' => ['nullable', 'string', 'max:20'],
         ]);
 
+        $user = $request->user();
         $user->update([
-            'name' => $data['fullName'] ?? $user->name,
+            'name' => $data['fullName'],
             'email' => $data['email'] ?? $user->email,
-            'mobile' => isset($data['phone'])
+            'mobile' => filled($data['phone'] ?? null)
                 ? $this->otp->normalizeMobile($data['phone'])
                 : $user->mobile,
         ]);
 
-        return $this->me($request);
+        return response()->json([
+            'user' => $this->userPayload($user->fresh()),
+        ]);
     }
 
     public function uploadAvatar(Request $request): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'avatar' => ['required', 'image', 'max:5120'],
         ]);
 
         $user = $request->user();
-        Media::delete($user->getRawOriginal('avatar'));
-        $path = Media::store($request->file('avatar'), 'avatars');
+        Media::delete($user->getRawOriginal('avatar') ?? $user->avatar);
+        $path = Media::store($data['avatar'], 'avatars');
         $user->update(['avatar' => $path]);
 
-        return $this->me($request);
+        return response()->json([
+            'user' => $this->userPayload($user->fresh()),
+        ]);
     }
 
     public function deleteAccount(Request $request): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'confirmation' => ['required', 'in:DELETE'],
         ]);
 
         $user = $request->user();
 
-        if ($user->isAdmin()) {
-            throw ValidationException::withMessages([
-                'confirmation' => ['Admin accounts cannot be deleted from the app.'],
-            ]);
-        }
-
         DB::transaction(function () use ($user) {
-            Media::delete($user->getRawOriginal('avatar'));
             $user->tokens()->delete();
-            $user->update([
-                'name' => 'Deleted User',
-                'email' => null,
-                'mobile' => 'deleted_'.$user->id.'_'.time(),
-                'avatar' => null,
-                'is_active' => false,
-                'password' => null,
-            ]);
+            Media::delete($user->getRawOriginal('avatar') ?? null);
+            $user->delete();
         });
 
-        return response()->json(['message' => 'Account deleted successfully']);
+        return response()->json(['message' => 'Account deleted.']);
     }
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()?->currentAccessToken()?->delete();
+        $request->user()->currentAccessToken()?->delete();
 
-        return response()->json(['message' => 'Logged out']);
+        return response()->json(['message' => 'Logged out.']);
     }
 
-    private function userPayload($user): array
+    protected function tokenPayload(User $user, string $token): array
+    {
+        return [
+            'id' => (string) $user->id,
+            'email' => (string) ($user->email ?? ''),
+            'fullName' => (string) $user->name,
+            'phone' => (string) ($user->mobile ?? ''),
+            'token' => $token,
+            'avatarUrl' => MobileUrl::absolute(Media::url($user->avatar)),
+        ];
+    }
+
+    protected function userPayload(User $user): array
     {
         return [
             'id' => (string) $user->id,

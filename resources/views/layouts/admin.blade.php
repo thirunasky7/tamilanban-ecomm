@@ -28,6 +28,7 @@
 <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*')?'active':'' }}">{{ __('admin.orders') }}</a>
 @if(auth('admin')->user()?->hasRole('super_admin'))
 <a href="{{ route('admin.payments.index') }}" class="{{ request()->routeIs('admin.payments.*')?'active':'' }}">{{ __('admin.payments') }}</a>
+<a href="{{ route('admin.sms.index') }}" class="{{ request()->routeIs('admin.sms.*')?'active':'' }}">SMS / OTP</a>
 <a href="{{ route('admin.languages.index') }}" class="{{ request()->routeIs('admin.languages.*')?'active':'' }}">{{ __('admin.languages') }}</a>
 @endif
 <a href="{{ route('home') }}" target="_blank">{{ __('admin.view_store') }}</a>
