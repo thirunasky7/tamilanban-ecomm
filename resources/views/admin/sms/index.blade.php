@@ -1,6 +1,3 @@
-<?php
-// placeholder - blade content below via redirect
-?>
 @extends('layouts.admin')
 @section('title', 'SMS Settings')
 @push('styles')
@@ -23,8 +20,20 @@
 <div class="adm-panel__body">
 <input type="hidden" name="sms_enabled" value="0"><input type="hidden" name="sms_use_dummy_otp" value="0">
 <div class="adm-toggle-list" style="margin-bottom:18px">
-<label class="adm-toggle-row"><div class="adm-toggle-row__text"><strong>Enable SMS gateway</strong><span>Send real SMS when credentials are set</span></div><input type="checkbox" class="adm-toggle" name="sms_enabled" value="1" @checked($sms_enabled)></label>
-<label class="adm-toggle-row"><div class="adm-toggle-row__text"><strong>Use dummy OTP (123456)</strong><span>On for testing; off in production</span></div><input type="checkbox" class="adm-toggle" name="sms_use_dummy_otp" value="1" @checked($sms_use_dummy_otp)></label>
+<label class="adm-toggle-row">
+<div class="adm-toggle-row__text"><strong>Enable SMS gateway</strong><span>Send real SMS when credentials are set</span></div>
+<span class="adm-toggle-control">
+<input type="checkbox" class="adm-toggle" name="sms_enabled" value="1" @checked($sms_enabled)>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
+</label>
+<label class="adm-toggle-row">
+<div class="adm-toggle-row__text"><strong>Use dummy OTP (123456)</strong><span>On for testing; off in production</span></div>
+<span class="adm-toggle-control">
+<input type="checkbox" class="adm-toggle" name="sms_use_dummy_otp" value="1" @checked($sms_use_dummy_otp)>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
+</label>
 </div>
 <div class="adm-field"><label>API Base URL</label><input name="sms_base_url" value="{{ old('sms_base_url', $sms_base_url) }}" required></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">

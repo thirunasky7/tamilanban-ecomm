@@ -273,19 +273,31 @@ Add Variation
 <div class="adm-panel__body adm-toggle-list">
 <label class="adm-toggle-row">
 <div class="adm-toggle-row__text"><strong>Active</strong><span>Visible on storefront</span></div>
+<span class="adm-toggle-control">
 <input type="checkbox" name="is_active" value="1" class="adm-toggle" @checked(old('is_active', $product->is_active ?? true))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 <label class="adm-toggle-row">
 <div class="adm-toggle-row__text"><strong>Featured</strong><span>Show on homepage</span></div>
+<span class="adm-toggle-control">
 <input type="checkbox" name="is_featured" value="1" class="adm-toggle" @checked(old('is_featured', $product->is_featured))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 <label class="adm-toggle-row">
 <div class="adm-toggle-row__text"><strong>New Arrival</strong><span>Mark as new</span></div>
+<span class="adm-toggle-control">
 <input type="checkbox" name="is_new" value="1" class="adm-toggle" @checked(old('is_new', $product->is_new))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 <label class="adm-toggle-row">
 <div class="adm-toggle-row__text"><strong>Bestseller</strong><span>Highlight popular item</span></div>
+<span class="adm-toggle-control">
 <input type="checkbox" name="is_bestseller" value="1" class="adm-toggle" @checked(old('is_bestseller', $product->is_bestseller))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 </div>
 </section>

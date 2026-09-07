@@ -68,7 +68,8 @@
 }
 
 /* Label click toggles the switch; avoid nested click quirks */
-.adm-payments-method .adm-toggle {
+.adm-payments-method .adm-toggle,
+.adm-payments-method .adm-toggle-ui {
   pointer-events: none;
 }
 

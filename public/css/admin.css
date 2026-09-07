@@ -32,11 +32,21 @@ a{color:inherit;text-decoration:none}
 .adm-nav a{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;color:#94a3b8!important;margin-bottom:2px;font-size:13px;font-weight:500}
 .adm-nav a:hover,.adm-nav a.active{background:rgba(var(--adm-pri-rgb),.35);color:#fff!important}
 .adm-nav a.active{border-left:3px solid var(--adm-accent);padding-left:9px}
-.adm-toggle{-webkit-appearance:none;appearance:none;width:44px!important;height:24px!important;margin:0;padding:0!important;border:none!important;background:#cbd5e1!important;border-radius:999px!important;position:relative;cursor:pointer;flex-shrink:0;box-shadow:none!important;transition:background .2s ease;vertical-align:middle}
-.adm-toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s ease;pointer-events:none}
-.adm-toggle:checked{background:var(--adm-pri)!important}
-.adm-toggle:checked::after{transform:translateX(20px)}
-.adm-toggle:focus-visible{outline:2px solid var(--adm-pri);outline-offset:2px}
+/* Switch: knob lives on a sibling span — ::after on <input> is unreliable across browsers */
+.adm-toggle-control{position:relative;display:inline-flex;align-items:center;flex-shrink:0;width:44px;height:24px;cursor:pointer}
+.adm-toggle{position:absolute!important;inset:0;z-index:1;width:44px!important;height:24px!important;margin:0;padding:0!important;opacity:0;cursor:pointer;border:none!important;background:transparent!important;box-shadow:none!important;-webkit-appearance:none;appearance:none}
+.adm-toggle-ui{display:block;width:44px;height:24px;border-radius:999px;background:#cbd5e1;position:relative;pointer-events:none;transition:background .2s ease;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)}
+.adm-toggle-ui::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s ease}
+.adm-toggle:checked+.adm-toggle-ui{background:var(--adm-pri)}
+.adm-toggle:checked+.adm-toggle-ui::after{transform:translateX(20px)}
+.adm-toggle:focus-visible+.adm-toggle-ui{outline:2px solid var(--adm-pri);outline-offset:2px}
+.adm-toggle:disabled+.adm-toggle-ui{opacity:.5;cursor:not-allowed}
+.adm-toggle-list{display:flex;flex-direction:column;gap:4px}
+.adm-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #f1f5f9;cursor:pointer}
+.adm-toggle-row:last-child{border-bottom:none;padding-bottom:0}
+.adm-toggle-row__text{display:flex;flex-direction:column;gap:2px}
+.adm-toggle-row__text strong{font-size:13px;font-weight:600}
+.adm-toggle-row__text span{font-size:12px;color:var(--adm-muted)}
 .adm-main{flex:1;margin-left:260px;padding:20px 24px 40px;min-width:0}
 .adm-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
 .adm-topbar h1{margin:0;font-size:1.4rem;font-weight:700}

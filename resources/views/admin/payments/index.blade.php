@@ -56,7 +56,10 @@ $maskedKeyId = filled($credentials['key_id'] ?? null)
 <strong>Enable Cash on Delivery</strong>
 <span>Show COD as a payment option at checkout</span>
 </div>
+<span class="adm-toggle-control">
 <input type="checkbox" class="adm-toggle" name="cod_enabled" value="1" @checked(old('cod_enabled', $cod?->is_enabled))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 </div>
 </div>
@@ -83,14 +86,20 @@ $maskedKeyId = filled($credentials['key_id'] ?? null)
 <strong>Enable Razorpay</strong>
 <span>Turn on online payments at checkout</span>
 </div>
+<span class="adm-toggle-control">
 <input type="checkbox" class="adm-toggle" name="razorpay_enabled" value="1" @checked(old('razorpay_enabled', $razorpay?->is_enabled))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 <label class="adm-toggle-row">
 <div class="adm-toggle-row__text">
 <strong>Sandbox / Test mode</strong>
 <span>Use Razorpay test keys (rzp_test_…)</span>
 </div>
+<span class="adm-toggle-control">
 <input type="checkbox" class="adm-toggle" name="razorpay_sandbox" value="1" @checked(old('razorpay_sandbox', $razorpay?->is_sandbox ?? true))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 </div>
 
@@ -115,17 +124,26 @@ $maskedKeyId = filled($credentials['key_id'] ?? null)
 <label class="adm-payments-method">
 <span class="adm-payments-method__icon" aria-hidden="true">📱</span>
 <span class="adm-payments-method__label">UPI</span>
+<span class="adm-toggle-control">
 <input type="checkbox" class="adm-toggle" name="upi_enabled" value="1" @checked(old('upi_enabled', $credentials['upi'] ?? true))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 <label class="adm-payments-method">
 <span class="adm-payments-method__icon" aria-hidden="true">🏦</span>
 <span class="adm-payments-method__label">Net Banking</span>
+<span class="adm-toggle-control">
 <input type="checkbox" class="adm-toggle" name="netbanking_enabled" value="1" @checked(old('netbanking_enabled', $credentials['netbanking'] ?? true))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 <label class="adm-payments-method">
 <span class="adm-payments-method__icon" aria-hidden="true">💳</span>
 <span class="adm-payments-method__label">Cards</span>
+<span class="adm-toggle-control">
 <input type="checkbox" class="adm-toggle" name="card_enabled" value="1" @checked(old('card_enabled', $credentials['card'] ?? true))>
+<span class="adm-toggle-ui" aria-hidden="true"></span>
+</span>
 </label>
 </div>
 </div>
