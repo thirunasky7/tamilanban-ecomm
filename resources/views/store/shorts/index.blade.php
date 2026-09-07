@@ -1,4 +1,4 @@
-﻿@extends('layouts.store')
+@extends('layouts.store')
 @section('title', __('store.shop_shorts'))
 @section('content')
 <h1 class="msh-page-title">{{ __('store.shop_shorts') }}</h1>

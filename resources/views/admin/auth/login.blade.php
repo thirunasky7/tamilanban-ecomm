@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', __('admin.admin_login'))
 @section('content')
 <div class="adm-login-wrap"><div class="adm-login-card">

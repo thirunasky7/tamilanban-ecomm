@@ -1,4 +1,4 @@
-﻿@extends('layouts.store')
+@extends('layouts.store')
 @section('title', __('store.verify_otp'))
 @section('content')
 <div class="msh-auth-card">

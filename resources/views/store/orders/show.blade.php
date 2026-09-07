@@ -1,4 +1,4 @@
-﻿@extends('layouts.store')
+@extends('layouts.store')
 @section('title', __('store.order'))
 @section('header_title', __('store.order_details'))
 @section('content')
