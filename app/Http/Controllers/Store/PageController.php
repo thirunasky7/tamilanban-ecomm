@@ -25,6 +25,13 @@ class PageController extends Controller
         return view('store.pages.refund');
     }
 
+    public function deleteAccount(): View
+    {
+        return view('store.pages.delete-account', [
+            'supportEmail' => Setting::getValue('support_email', 'support@shopease.test'),
+        ]);
+    }
+
     public function contact(): View
     {
         return view('store.pages.contact', [
