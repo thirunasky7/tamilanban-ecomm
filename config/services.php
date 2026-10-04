@@ -47,6 +47,10 @@ return [
         'dummy_otp' => env('SMS_DUMMY_OTP'),
         // Optional comma-separated mobile allowlist. Empty means "any number".
         'dummy_otp_mobiles' => env('SMS_DUMMY_OTP_MOBILES', ''),
+        // Opt-in escape hatch that lets an allowlisted number use the fixed OTP
+        // on a production server. Off by default, and ignored without an
+        // allowlist so it can never become a global bypass.
+        'allow_dummy_in_production' => env('SMS_ALLOW_DUMMY_IN_PRODUCTION', false),
     ],
 
 ];

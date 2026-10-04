@@ -58,7 +58,14 @@ class CustomerOtpService
                 'mobile' => $mobile,
                 'error' => $exception->getMessage(),
             ]);
-            $smsSent = false;
+if ($useDummy) {
+            Log::warning('Fixed OTP issued instead of a real SMS.', [
+                'mobile' => $mobile,
+                'environment' => app()->environment(),
+            ]);
+        }
+
+        $smsSent = false;
         }
 
         $payload = [

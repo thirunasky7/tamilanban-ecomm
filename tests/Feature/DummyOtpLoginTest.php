@@ -23,6 +23,7 @@ class DummyOtpLoginTest extends TestCase
             'services.sms.enabled' => false,
             'services.sms.dummy_otp' => '123456',
             'services.sms.dummy_otp_mobiles' => '',
+            'services.sms.allow_dummy_in_production' => false,
         ]);
     }
 
@@ -126,12 +127,38 @@ class DummyOtpLoginTest extends TestCase
     {
         app()['env'] = 'production';
 
-        config(['services.sms.dummy_otp_mobiles' => '9999999999']);
+        config(['services.sms.dummy_otp_mobiles' => '6381673242']);
 
-        $this->postJson('/api/v1/auth/otp/send', ['mobile' => '9999999999'])
+        $this->postJson('/api/v1/auth/otp/send', ['mobile' => '6381673242'])
             ->assertStatus(422)
             ->assertJsonValidationErrors('mobile');
 
         $this->assertDatabaseCount('otp_codes', 0);
+    }
+
+    public function test_allowlisted_number_gets_the_fixed_otp_on_a_production_server(): void
+    {
+        app()['env'] = 'production';
+
+        config([
+            'services.sms.dummy_otp_mobiles' => '6381673242',
+            'services.sms.allow_dummy_in_production' => true,
+        ]);
+
+        $this->postJson('/api/v1/auth/otp/send', ['mobile' => '6381673242'])
+            ->assertOk()
+            ->assertJsonPath('dummy_otp', '123456');
+
+        $this->assertSame('123456', OtpCode::where('mobile', '6381673242')->value('code'));
+
+        // Any other number on the live store still needs a real SMS.
+        $this->postJson('/api/v1/auth/otp/send', ['mobile' => '9876543210'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('mobile');
+
+        $this->postJson('/api/v1/auth/otp/verify', [
+            'mobile' => '6381673242',
+            'otp' => '123456',
+        ])->assertOk()->assertJsonStructure(['token']);
     }
 }

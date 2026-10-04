@@ -60,12 +60,12 @@ class SmsGatewayService
     /**
      * Whether the fixed OTP is active at all.
      *
-     * Hard-blocked in production: a shared OTP must never work on a live
-     * store, no matter how the setting or env is configured.
+     * Production is blocked unless SMS_ALLOW_DUMMY_IN_PRODUCTION is explicitly
+     * enabled, so a shared OTP can never be switched on by accident.
      */
     public function dummyOtpEnabled(): bool
     {
-        if (app()->environment('production')) {
+        if (app()->environment('production') && ! $this->dummyOtpAllowedInProduction()) {
             return false;
         }
 
@@ -81,6 +81,35 @@ class SmsGatewayService
     }
 
     /**
+     * Explicit opt-in for using the fixed OTP on a production server.
+     *
+     * Requires SMS_DUMMY_OTP_MOBILES so the bypass stays scoped to named
+     * numbers instead of every account on the store.
+     */
+    public function dummyOtpAllowedInProduction(): bool
+    {
+        if (! filter_var(
+            config('services.sms.allow_dummy_in_production'),
+            FILTER_VALIDATE_BOOLEAN
+        )) {
+            return false;
+        }
+
+        return $this->dummyOtpAllowlist() !== [];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function dummyOtpAllowlist(): array
+    {
+        return array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) config('services.sms.dummy_otp_mobiles', ''))
+        )));
+    }
+
+    /**
      * Whether the fixed OTP may be used for this mobile number.
      *
      * With SMS_DUMMY_OTP_MOBILES set, only those numbers may use it, which
@@ -92,10 +121,7 @@ class SmsGatewayService
             return false;
         }
 
-        $allowlist = array_filter(array_map(
-            'trim',
-            explode(',', (string) config('services.sms.dummy_otp_mobiles', ''))
-        ));
+        $allowlist = $this->dummyOtpAllowlist();
 
         if ($allowlist === []) {
             return true;

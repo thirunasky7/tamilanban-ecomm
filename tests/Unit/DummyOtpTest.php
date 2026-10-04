@@ -14,6 +14,7 @@ class DummyOtpTest extends TestCase
         config([
             'services.sms.dummy_otp' => '123456',
             'services.sms.dummy_otp_mobiles' => '',
+            'services.sms.allow_dummy_in_production' => false,
         ]);
     }
 
@@ -25,6 +26,30 @@ class DummyOtpTest extends TestCase
 
         $this->assertFalse($service->dummyOtpEnabled());
         $this->assertFalse($service->dummyOtpAllowedFor('9999999999'));
+    }
+
+    public function test_dummy_otp_stays_disabled_in_production_without_an_allowlist(): void
+    {
+        app()['env'] = 'production';
+        config(['services.sms.allow_dummy_in_production' => true]);
+
+        $this->assertFalse(app(SmsGatewayService::class)->dummyOtpEnabled());
+    }
+
+    public function test_allowlisted_number_can_use_the_fixed_otp_in_production(): void
+    {
+        app()['env'] = 'production';
+        config([
+            'services.sms.allow_dummy_in_production' => true,
+            'services.sms.dummy_otp_mobiles' => '6381673242',
+        ]);
+
+        $service = app(SmsGatewayService::class);
+
+        $this->assertTrue($service->dummyOtpEnabled());
+        $this->assertTrue($service->dummyOtpAllowedFor('6381673242'));
+        $this->assertTrue($service->dummyOtpAllowedFor('916381673242'));
+        $this->assertFalse($service->dummyOtpAllowedFor('9876543210'));
     }
 
     public function test_dummy_otp_is_enabled_outside_production(): void
