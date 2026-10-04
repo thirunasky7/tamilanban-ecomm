@@ -8,6 +8,7 @@ use App\Services\Sms\SmsGatewayService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class CustomerOtpService
@@ -24,8 +25,17 @@ class CustomerOtpService
 
         OtpCode::query()->where('mobile', $mobile)->delete();
 
-        $useDummy = $this->sms->useDummyOtp() || ! $this->sms->enabled();
-        $code = $useDummy ? self::DUMMY_OTP : (string) random_int(100000, 999999);
+        $useDummy = $this->sms->dummyOtpAllowedFor($mobile);
+        $code = $useDummy
+            ? (string) ($this->sms->dummyOtpCode() ?? self::DUMMY_OTP)
+            : (string) random_int(100000, 999999);
+
+        if (! $useDummy && ! $this->sms->enabled()) {
+            // Never issue a random code the user has no way of receiving.
+            throw ValidationException::withMessages([
+                'mobile' => ['SMS gateway is not configured. Enable SMS or set SMS_DUMMY_OTP.'],
+            ]);
+        }
 
         $otp = OtpCode::query()->create([
             'mobile' => $mobile,
@@ -38,7 +48,7 @@ class CustomerOtpService
             if ($this->sms->enabled()) {
                 $template = $this->sms->template(
                     'otp',
-                    'Your ShopEase OTP is {otp}. Valid for 10 minutes.'
+                    'Your Koru OTP is {otp}. Valid for 10 minutes.'
                 );
                 $body = $this->sms->render($template, ['otp' => $code]);
                 $smsSent = $this->sms->send($mobile, $body);
@@ -57,19 +67,24 @@ class CustomerOtpService
             'message' => $smsSent
                 ? 'OTP sent to your mobile number.'
                 : ($useDummy
-                    ? 'OTP ready. Use 123456 (dummy OTP / SMS not enabled).'
+                    ? 'OTP ready. Use '.$code.' (dummy OTP / SMS not enabled).'
                     : 'OTP generated. If you did not receive SMS, try again shortly.'),
             'sms_sent' => $smsSent,
         ];
 
         if ($useDummy) {
-            $payload['dummy_otp'] = self::DUMMY_OTP;
+            $payload['dummy_otp'] = $code;
         }
 
         return $payload;
     }
 
-    public function verifyAndLogin(string $mobile, string $code, ?string $name = null): User
+    /**
+     * Returns the latest unused, unexpired OTP for a mobile number, or null.
+     *
+     * Shared by the API and the web login so both enforce the same rules.
+     */
+    public function findValidOtp(string $mobile, ?string $code): ?OtpCode
     {
         $mobile = $this->normalizeMobile($mobile);
 
@@ -78,7 +93,20 @@ class CustomerOtpService
             ->latest()
             ->first();
 
-        if (! $otp || ! $otp->isValid($code)) {
+        if (! $otp || $code === null || ! $otp->isValid($code)) {
+            return null;
+        }
+
+        return $otp;
+    }
+
+    public function verifyAndLogin(string $mobile, string $code, ?string $name = null): User
+    {
+        $mobile = $this->normalizeMobile($mobile);
+
+        $otp = $this->findValidOtp($mobile, $code);
+
+        if (! $otp) {
             abort(422, 'Invalid or expired OTP.');
         }
 

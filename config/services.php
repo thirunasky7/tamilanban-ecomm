@@ -42,6 +42,11 @@ return [
         'api_key' => env('SMS_API_KEY'),
         'api_secret' => env('SMS_API_SECRET'),
         'country_code' => env('SMS_DEFAULT_COUNTRY_CODE', '91'),
+        // Fixed OTP for QA and store-reviewer access. Never honoured when
+        // APP_ENV=production, regardless of how it is configured.
+        'dummy_otp' => env('SMS_DUMMY_OTP'),
+        // Optional comma-separated mobile allowlist. Empty means "any number".
+        'dummy_otp_mobiles' => env('SMS_DUMMY_OTP_MOBILES', ''),
     ],
 
 ];

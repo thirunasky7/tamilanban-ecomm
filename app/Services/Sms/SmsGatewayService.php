@@ -44,7 +44,78 @@ class SmsGatewayService
 
     public function useDummyOtp(): bool
     {
-        return filter_var(Setting::getValue('sms_use_dummy_otp', '1'), FILTER_VALIDATE_BOOLEAN);
+        return $this->dummyOtpEnabled();
+    }
+
+    /**
+     * The fixed OTP configured through SMS_DUMMY_OTP, if any.
+     */
+    public function dummyOtpCode(): ?string
+    {
+        $code = trim((string) config('services.sms.dummy_otp', ''));
+
+        return $code === '' ? null : $code;
+    }
+
+    /**
+     * Whether the fixed OTP is active at all.
+     *
+     * Hard-blocked in production: a shared OTP must never work on a live
+     * store, no matter how the setting or env is configured.
+     */
+    public function dummyOtpEnabled(): bool
+    {
+        if (app()->environment('production')) {
+            return false;
+        }
+
+        if ($this->dummyOtpCode() !== null) {
+            return true;
+        }
+
+        // Admin toggle from the SMS settings screen. Defaults to off.
+        return filter_var(
+            Setting::getValue('sms_use_dummy_otp', '0'),
+            FILTER_VALIDATE_BOOLEAN
+        );
+    }
+
+    /**
+     * Whether the fixed OTP may be used for this mobile number.
+     *
+     * With SMS_DUMMY_OTP_MOBILES set, only those numbers may use it, which
+     * keeps reviewer/test access narrow instead of opening a global bypass.
+     */
+    public function dummyOtpAllowedFor(?string $mobile = null): bool
+    {
+        if (! $this->dummyOtpEnabled()) {
+            return false;
+        }
+
+        $allowlist = array_filter(array_map(
+            'trim',
+            explode(',', (string) config('services.sms.dummy_otp_mobiles', ''))
+        ));
+
+        if ($allowlist === []) {
+            return true;
+        }
+
+        if ($mobile === null) {
+            return false;
+        }
+
+        $digits = preg_replace('/\D+/', '', $mobile) ?? '';
+
+        foreach ($allowlist as $allowed) {
+            $allowedDigits = preg_replace('/\D+/', '', $allowed) ?? '';
+
+            if ($allowedDigits !== '' && str_ends_with($digits, $allowedDigits)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\OtpCode;
 use App\Models\User;
 use App\Services\Auth\CustomerOtpService;
 use App\Support\Media;
@@ -51,12 +50,9 @@ class AuthController extends Controller
 
         $mobile = $this->otp->normalizeMobile($data['mobile']);
 
-        $otp = OtpCode::query()
-            ->where('mobile', $mobile)
-            ->latest()
-            ->first();
+        $otp = $this->otp->findValidOtp($mobile, $data['otp']);
 
-        if (! $otp || ! $otp->isValid($data['otp'])) {
+        if (! $otp) {
             throw ValidationException::withMessages([
                 'otp' => ['Invalid or expired OTP.'],
             ]);
@@ -67,7 +63,7 @@ class AuthController extends Controller
         $user = User::query()->firstOrCreate(
             ['mobile' => $mobile],
             [
-                'name' => $data['name'] ?: 'Customer '.substr($mobile, -4),
+                'name' => ($data['name'] ?? null) ?: 'Customer '.substr($mobile, -4),
                 'type' => 'customer',
                 'is_active' => true,
                 'mobile_verified_at' => now(),
